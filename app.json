@@ -8,6 +8,11 @@
     "scheme": "insumo1a4",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "extra": {
+      "eas": {
+        "projectId": "tu-project-id-aqui"
+      }
+    },
     "ios": {
       "supportsTablet": true
     },
@@ -45,7 +50,8 @@
           "icon": "./assets/images/icon.png",
           "color": "#bd93f9"
         }
-      ]
+      ],
+      "expo-build-properties"
     ],
     "experiments": {
       "typedRoutes": true,
