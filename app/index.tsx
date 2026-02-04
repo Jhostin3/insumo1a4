@@ -1,179 +1,21 @@
-import { useState } from 'react';
-import {
-  StyleSheet,
-  Text,
-  View,
-  TouchableOpacity,
-  FlatList,
-  ActivityIndicator,
-} from 'react-native';
+import { Redirect } from 'expo-router';
 import { useAuth } from '@/lib/modules/auth/AuthProvider';
-import { OrdersService } from '@/lib/modules/orders/orders.service';
+import { ActivityIndicator, View } from 'react-native';
 
-type Order = {
-  id: string;
-  status: string;
-  created_at: string;
-  ready_at?: string;
-};
+export default function Index() {
+  const { session, loading } = useAuth();
 
-export default function OrdersScreen() {
-  const { session } = useAuth();
-  const [loading, setLoading] = useState(false);
-  const [orders, setOrders] = useState<Order[]>([]);
-
-  const handleCreateOrder = async () => {
-    if (!session?.user.id) {
-      alert('Debes iniciar sesión para crear un pedido');
-      return;
-    }
-
-    setLoading(true);
-    const result = await OrdersService.createOrder(session.user.id);
-    setLoading(false);
-
-    if (result.success) {
-      // Recargar pedidos
-      loadOrders();
-    } else {
-      alert('Error al crear pedido');
-    }
-  };
-
-  const loadOrders = async () => {
-    if (!session?.user.id) return;
-    const userOrders = await OrdersService.getUserOrders(session.user.id);
-    setOrders(userOrders);
-  };
-
-  const renderOrder = ({ item }: { item: Order }) => (
-    <View style={styles.orderCard}>
-      <View style={styles.orderHeader}>
-        <Text style={styles.orderId}>
-          Pedido #{item.id.slice(0, 8)}
-        </Text>
-        <View
-          style={[
-            styles.statusBadge,
-            item.status === 'ready' && styles.statusReady,
-          ]}
-        >
-          <Text style={styles.statusText}>
-            {item.status === 'ready' ? '✅ Listo' : '⏳ Pendiente'}
-          </Text>
-        </View>
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#bd93f9" />
       </View>
-      <Text style={styles.orderDate}>
-        {new Date(item.created_at).toLocaleString()}
-      </Text>
-    </View>
-  );
+    );
+  }
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Mis Pedidos</Text>
+  if (session) {
+    return <Redirect href="/(tabs)/orders" />;
+  }
 
-      <TouchableOpacity
-        style={styles.button}
-        onPress={handleCreateOrder}
-        disabled={loading}
-      >
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.buttonText}>📦 Enviar Nuevo Pedido</Text>
-        )}
-      </TouchableOpacity>
-
-      <FlatList
-        data={orders}
-        renderItem={renderOrder}
-        keyExtractor={(item) => item.id}
-        style={styles.list}
-        onRefresh={loadOrders}
-        refreshing={false}
-      />
-
-      {!session && (
-        <Text style={styles.warning}>
-          Inicia sesión para gestionar tus pedidos
-        </Text>
-      )}
-    </View>
-  );
+  return <Redirect href="/(auth)/login" />;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: '#f8f8f2',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    color: '#282a36',
-  },
-  button: {
-    backgroundColor: '#bd93f9',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  list: {
-    flex: 1,
-  },
-  orderCard: {
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  orderHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  orderId: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#282a36',
-  },
-  statusBadge: {
-    backgroundColor: '#ffb86c',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  statusReady: {
-    backgroundColor: '#50fa7b',
-  },
-  statusText: {
-    color: '#282a36',
-    fontWeight: '600',
-    fontSize: 12,
-  },
-  orderDate: {
-    fontSize: 14,
-    color: '#6272a4',
-  },
-  warning: {
-    textAlign: 'center',
-    color: '#ff5555',
-    marginTop: 20,
-    fontSize: 14,
-  },
-});
