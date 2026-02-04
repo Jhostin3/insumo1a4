@@ -4,6 +4,28 @@
 -- Ejecuta estos comandos en el SQL Editor de Supabase
 -- Dashboard > SQL Editor > New query
 
+-- 0. Trigger automático: crear perfil cuando se registra un usuario
+-- Esto se ejecuta con SECURITY DEFINER, así que no afecta RLS
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email, first_name, last_name, updated_at)
+  VALUES (
+    new.id,
+    new.email,
+    new.raw_user_meta_data->>'first_name',
+    new.raw_user_meta_data->>'last_name',
+    now()
+  );
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+AFTER INSERT ON auth.users
+FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
 -- 1. Habilitar extensión HTTP (si no está habilitada)
 CREATE EXTENSION IF NOT EXISTS http WITH SCHEMA extensions;
 

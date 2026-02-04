@@ -2,28 +2,20 @@ import { supabase } from '../../core/supabase/client.supabase';
 
 export const AuthService = {
   async signUp(email: string, password: string, firstName: string, lastName: string) {
+    // El perfil se crea automáticamente via trigger en auth.users
+    // Pasamos first_name y last_name como metadata para uso futuro
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          first_name: firstName,
+          last_name: lastName,
+        },
+      },
     });
 
     if (error) throw error;
-
-    // Crear perfil en la tabla profiles
-    if (data.user) {
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: data.user.id,
-          email,
-          first_name: firstName,
-          last_name: lastName,
-          updated_at: new Date().toISOString(),
-        });
-
-      if (profileError) console.error('Error creando perfil:', profileError);
-    }
-
     return data;
   },
 
